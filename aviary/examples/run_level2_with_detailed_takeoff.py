@@ -27,7 +27,8 @@ subsystem_options = {
 
 mach_optimize = True
 altitude_optimize = True
-optimizer = 'SLSQP'
+# optimizer = 'SLSQP'
+optimizer = 'SNOPT'
 
 phase_info = {
     'pre_mission': {'include_takeoff': False, 'optimize_mass': False},
@@ -61,10 +62,10 @@ phase_info = {
             'throttle_enforcement': 'boundary_constraint',
             'rotation': True,
             'mach_optimize': mach_optimize,
-            'mach_polynomial_order': 1,
+            'mach_polynomial_order': 2,
             'mach_bounds': ((0.18, 0.2), 'unitless'),
             'altitude_optimize': False,
-            'altitude_polynomial_order': 1,
+            'altitude_polynomial_order': 2,
             'altitude_initial': (0.0, 'ft'),
             'altitude_final': (0.0, 'ft'),
             'constraints': {
@@ -96,10 +97,10 @@ phase_info = {
             'time_duration_ref': (1.0e3, 'ft'),
             'time_duration_bounds': ((500.0, 1500.0), 'ft'),
             'mach_optimize': mach_optimize,
-            'mach_polynomial_order': 1,
+            'mach_polynomial_order': 2,
             'mach_bounds': ((0.2, 0.22), 'unitless'),
             'altitude_optimize': altitude_optimize,
-            'altitude_polynomial_order': 1,
+            'altitude_polynomial_order': 2,
             'altitude_bounds': ((0.0, 250.0), 'ft'),
             'throttle_enforcement': 'boundary_constraint',
             'rotation': False,
@@ -123,10 +124,10 @@ phase_info = {
             'time_duration_ref': (1.0e3, 'ft'),
             'time_duration_bounds': ((3.0e3, 20.0e3), 'ft'),
             'mach_optimize': mach_optimize,
-            'mach_polynomial_order': 1,
+            'mach_polynomial_order': 2,
             'mach_bounds': ((0.22, 0.3), 'unitless'),
             'altitude_optimize': altitude_optimize,
-            'altitude_polynomial_order': 1,
+            'altitude_polynomial_order': 2,
             'altitude_initial': (50.0, 'ft'),
             'altitude_final': (985.0, 'ft'),
             'altitude_bounds': ((0.0, 985.0), 'ft'),
@@ -158,9 +159,10 @@ phase_info = {
             'time_duration_ref': (1.0e3, 'ft'),
             'time_duration_bounds': ((3.0e3, 20.0e3), 'ft'),
             'mach_optimize': mach_optimize,
-            'mach_polynomial_order': 1,
+            'mach_polynomial_order': 2,
             'mach_bounds': ((0.22, 0.3), 'unitless'),
             'altitude_optimize': altitude_optimize,
+            # 'altitude_optimize': False,
             'altitude_polynomial_order': 1,
             'altitude_bounds': ((985.0, 1100.0), 'ft'),
             'throttle_enforcement': 'path_constraint',
@@ -227,10 +229,10 @@ phase_info = {
             'time_duration_ref': (1.0e3, 'ft'),
             'time_duration_bounds': ((1.0e3, 20.0e3), 'ft'),
             'mach_optimize': mach_optimize,
-            'mach_polynomial_order': 1,
+            'mach_polynomial_order': 2,
             'mach_bounds': ((0.24, 0.32), 'unitless'),
             'altitude_optimize': altitude_optimize,
-            'altitude_polynomial_order': 1,
+            'altitude_polynomial_order': 2,
             'altitude_bounds': ((1.1e3, 1.2e3), 'ft'),
             'throttle_enforcement': 'path_constraint',
             'constraints': {
@@ -268,10 +270,10 @@ phase_info = {
             'time_duration_ref': (1.0e3, 'ft'),
             'time_duration_bounds': ((100.0, 50.0e3), 'ft'),
             'mach_optimize': mach_optimize,
-            'mach_polynomial_order': 1,
+            'mach_polynomial_order': 2,
             'mach_bounds': ((0.24, 0.32), 'unitless'),
             'altitude_optimize': altitude_optimize,
-            'altitude_polynomial_order': 1,
+            'altitude_polynomial_order': 2,
             'altitude_bounds': ((1.0e3, 3.0e3), 'ft'),
             'throttle_enforcement': 'boundary_constraint',
             'constraints': {
@@ -325,7 +327,7 @@ if __name__ == '__main__':
     # Link phases and variables
     prob.link_phases()
 
-    prob.add_driver(optimizer, max_iter=25)
+    prob.add_driver(optimizer, max_iter=250, verbosity=None)
 
     prob.add_design_variables()
 
@@ -337,13 +339,20 @@ if __name__ == '__main__':
 
     prob.set_initial_guesses()
 
-    prob.run_aviary_problem(record_filename='detailed_takeoff.db', suppress_solver_print=True)
+    prob.run_aviary_problem(
+                                    record_filename='problem_history.db', 
+                                    optimization_history_filename='optimization_history.db',
+                                    # suppress_solver_print=True,
+                                    make_plots=True,
+                                    # suppress_solver_print=False,
+                                    verbosity=None,
+                                    )
 
     try:
         loc = prob.get_outputs_dir()
-        cr = om.CaseReader(f'{loc}/detailed_takeoff.db')
+        cr = om.CaseReader(f'{loc}/problem_history.db')
     except:
-        cr = om.CaseReader('detailed_takeoff.db')
+        cr = om.CaseReader('problem_history.db')
 
     cases = cr.get_cases('problem')
     case = cases[0]

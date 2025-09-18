@@ -6,6 +6,9 @@ from aviary.examples.external_subsystems.battery.battery_variable_meta_data impo
 from aviary.interface.methods_for_level2 import AviaryProblem
 from aviary.utils.functions import get_aviary_resource_path
 
+from aviary.examples.external_subsystems.battery.battery_variables import Dynamic
+
+
 battery_builder = BatteryBuilder(include_constraints=False)
 
 # add the battery model to each mission phase, as well as pre-mission for sizing
@@ -36,16 +39,25 @@ if __name__ == '__main__':
     # Link phases and variables
     prob.link_phases()
 
-    prob.add_driver('SLSQP')
+    # prob.add_driver('SLSQP', max_iter=250, verbosity=None)
+    prob.add_driver('SNOPT', max_iter=250, verbosity=None)
 
     prob.add_design_variables()
 
-    prob.add_objective('mass')
-    # prob.model.add_objective(
-    #     f'traj.climb.states:{Dynamic.Battery.STATE_OF_CHARGE}', index=-1, ref=-1)
+    # prob.add_objective('mass')
+    prob.model.add_objective(
+        f'traj.climb.states:{Dynamic.Battery.STATE_OF_CHARGE}', index=-1, ref=-1)
 
     prob.setup()
 
     prob.set_initial_guesses()
 
-    prob.run_aviary_problem()
+    prob.run_aviary_problem(record_filename='problem_history.db', 
+                                    optimization_history_filename='optimization_history.db',
+                                    # suppress_solver_print=True,
+                                    make_plots=True,
+                                    # suppress_solver_print=False,
+                                    verbosity=None,)
+    
+    # Display driver result
+    print(prob.driver.result)
