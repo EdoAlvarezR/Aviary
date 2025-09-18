@@ -1,4 +1,5 @@
 import numpy as np
+import openmdao.api as om
 
 from aviary.mission.gasp_based.ode.accel_eom import AccelerationRates
 from aviary.mission.gasp_based.ode.params import ParamPort
@@ -40,6 +41,10 @@ class AccelODE(TwoDOFODE):
         self.add_core_subsystems()
 
         self.add_external_subsystems()
+
+        # prop_group = om.Group()
+        # self.add_throttle_control(num_nodes=nn, atol=1e-7, rtol=1e-7, prop_group=prop_group)
+        self.add_throttle_control(num_nodes=nn, atol=1e-7, rtol=1e-7, prop_group=self)
 
         self.add_subsystem(
             'accel_eom',

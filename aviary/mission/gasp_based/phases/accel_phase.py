@@ -186,4 +186,5 @@ AccelPhase._add_initial_guess_meta_data(
 
 AccelPhase._add_initial_guess_meta_data(
     InitialGuessControl('throttle'), desc='initial guess for throttle'
+    # InitialGuessState('throttle'), desc='initial guess for throttle'
 )

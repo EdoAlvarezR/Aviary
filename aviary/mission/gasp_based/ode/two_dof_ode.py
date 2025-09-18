@@ -190,7 +190,7 @@ class TwoDOFODE(_BaseODE):
         )
         prop_group.add_subsystem(
             'thrust_balance',
-            thrust_bal,
+            subsys=thrust_bal,
             promotes_inputs=[
                 Dynamic.Vehicle.Propulsion.THRUST_TOTAL,
                 'required_thrust',

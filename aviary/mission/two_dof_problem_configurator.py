@@ -355,12 +355,13 @@ class TwoDOFProblemConfigurator(ProblemConfiguratorBase):
                     initial_ref=initial_ref,
                 )
 
-        phase.add_control(
-            Dynamic.Vehicle.Propulsion.THROTTLE,
-            targets=Dynamic.Vehicle.Propulsion.THROTTLE,
-            units='unitless',
-            opt=False,
-        )
+        if 'accel' not in phase_name:
+            phase.add_control(
+                Dynamic.Vehicle.Propulsion.THROTTLE,
+                targets=Dynamic.Vehicle.Propulsion.THROTTLE,
+                units='unitless',
+                opt=False,
+            )
 
         # TODO: This seems like a hack. We might want to find a better way.
         #       The issue is that aero methods are hardcoded for GASP mission phases
@@ -682,7 +683,8 @@ class TwoDOFProblemConfigurator(ProblemConfiguratorBase):
         rotation_mass = aviary_group.initialization_guesses['rotation_mass']
         flight_duration = aviary_group.initialization_guesses['flight_duration']
 
-        control_keys = ['velocity_rate', 'throttle']
+        # control_keys = ['velocity_rate', 'throttle']
+        control_keys = ['velocity_rate']
         state_keys = [
             'altitude',
             'mass',
@@ -690,7 +692,13 @@ class TwoDOFProblemConfigurator(ProblemConfiguratorBase):
             Dynamic.Mission.VELOCITY,
             'flight_path_angle',
             Dynamic.Vehicle.ANGLE_OF_ATTACK,
+            # 'throttle'
         ]
+
+        if 'accel' in phase_name and False:
+            state_keys.append('throttle')
+        else:
+            control_keys.append('throttle')
 
         if phase_name == 'ascent':
             # Alpha is a control for ascent.
