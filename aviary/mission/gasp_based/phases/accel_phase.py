@@ -43,6 +43,12 @@ class AccelPhaseOptions(AviaryOptionsDictionary):
         }
         self.add_state_options('velocity', units='kn', defaults=defaults)
 
+        # defaults = {
+        #     'throttle_bounds': (0.0, 1.0),
+        # }
+        # self.add_control_options('throttle', units='unitless', defaults=defaults)
+        # self.add_state_options('throttle', units='unitless', defaults=defaults)
+
         self.add_time_options(units='s')
 
         self.declare(

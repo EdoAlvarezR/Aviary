@@ -1,5 +1,7 @@
 import openmdao.api as om
 
+from dymos.utils.misc import _unspecified
+
 from aviary.constants import GRAV_ENGLISH_LBM, RHO_SEA_LEVEL_ENGLISH
 from aviary.mission.gasp_based.ode.landing_ode import LandingSegment
 from aviary.mission.gasp_based.ode.params import ParamPort
@@ -355,11 +357,17 @@ class TwoDOFProblemConfigurator(ProblemConfiguratorBase):
                     initial_ref=initial_ref,
                 )
 
+        throttle_control = ['ascent', 'accel', 'climb1', 'climb2', 'desc1', 'desc2']
+
         phase.add_control(
             Dynamic.Vehicle.Propulsion.THROTTLE,
             targets=Dynamic.Vehicle.Propulsion.THROTTLE,
             units='unitless',
-            opt=False,
+            opt=True if phase_name in throttle_control else False,
+            lower=0.0 if phase_name in throttle_control else _unspecified, 
+            upper=1.0 if phase_name in throttle_control else _unspecified,
+            # fix_final=True if phase_name in throttle_control else _unspecified,
+            continuity=True if phase_name in throttle_control else _unspecified,
         )
 
         # TODO: This seems like a hack. We might want to find a better way.
