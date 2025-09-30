@@ -1298,7 +1298,9 @@ class AviaryGroup(om.Group):
                 self.add_design_var('tau_gear', lower=0.01, upper=1.0, units='unitless', ref=1)
                 self.add_design_var('tau_flaps', lower=0.01, upper=1.0, units='unitless', ref=1)
                 self.add_constraint('h_fit.h_init_gear', equals=50.0, units='ft', ref=50.0)
-                self.add_constraint('h_fit.h_init_flaps', equals=400.0, units='ft', ref=400.0)
+                # self.add_constraint('h_fit.h_init_flaps', equals=400.0, units='ft', ref=400.0)
+                # self.add_constraint('h_fit.h_init_flaps', equals=80.0, units='ft', ref=400.0)
+                self.add_constraint('h_fit.h_init_flaps', lower=0.0, units='ft', ref=400.0)
 
     def set_initial_guesses(self, parent_prob=None, parent_prefix='', verbosity=None):
         """
