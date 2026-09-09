@@ -11,9 +11,10 @@ from aviary.subsystems.propulsion.propeller.propeller_performance import (
     PropellerPerformance,
     TipSpeed,
 )
+from aviary.utils.aviary_values import AviaryValues
+from aviary.variable_info.enums import Verbosity
 from aviary.variable_info.functions import setup_model_options
-from aviary.variable_info.options import get_option_defaults
-from aviary.variable_info.variables import Aircraft, Dynamic, Settings
+from aviary.variable_info.variables import Aircraft, Dynamic, Mission, Settings
 
 # Setting up truth values from GASP (The first 12 are actual truth values, the rest are intelligent guesses)
 # test values now are slightly different due to setup - max tip speed was limited to test
@@ -188,15 +189,23 @@ class PropellerPerformanceTest(unittest.TestCase):
     """Test computation of propeller performance test using Hamilton Standard model."""
 
     def setUp(self):
-        options = get_option_defaults()
+        # Options below are set explicitly (hardcoded from _MetaData defaults) so this test
+        # does not depend on any _MetaData drift for PropellerPerformance and its subsystems
+        # (PropellerMap, PreHamiltonStandard, HamiltonStandard, PostHamiltonStandard,
+        # TipSpeed, AreaSquareRatio, AdvanceRatio, InstallLoss) and the peer Atmosphere /
+        # FlightConditions subsystem.
+        options = AviaryValues()
+        options.set_val(Settings.VERBOSITY, val=Verbosity.QUIET)
         options.set_val(
             Aircraft.Engine.Propeller.COMPUTE_INSTALLATION_LOSS,
             val=True,
             units='unitless',
         )
+        # Intentionally NOT setting Aircraft.Engine.Propeller.DATA_FILE: PropellerPerformance
+        # falls back to use_propeller_map=False when the key is missing (KeyError branch),
+        # which is the behavior this test relies on.
         options.set_val(Aircraft.Engine.Propeller.NUM_BLADES, val=4, units='unitless')
-        options.set_val(Aircraft.Engine.GENERATE_FLIGHT_IDLE, False)
-        options.set_val(Settings.VERBOSITY, 0)
+        options.set_val(Mission.SEA_LEVEL_DENSITY, val=1.225, units='kg/m**3')
 
         prob = om.Problem()
 
@@ -221,7 +230,9 @@ class PropellerPerformanceTest(unittest.TestCase):
             800 * np.ones(num_nodes),
             units='ft/s',
         )
-        pp.set_input_defaults(Dynamic.Mission.VELOCITY, 100.0 * np.ones(num_nodes), units='knot')
+        prob.model.set_input_defaults(
+            Dynamic.Mission.VELOCITY, 100.0 * np.ones(num_nodes), units='knot'
+        )
         num_blades = 4
         options.set_val(Aircraft.Engine.Propeller.NUM_BLADES, val=num_blades, units='unitless')
         options.set_val(
@@ -256,13 +267,18 @@ class PropellerPerformanceTest(unittest.TestCase):
 
         for case_idx in range(case_idx_begin, case_idx_end):
             idx = case_idx - case_idx_begin
-            assert_near_equal(cthr[idx], CT[case_idx], tolerance=tol)
-            assert_near_equal(ctlf[idx], XFT[case_idx], tolerance=tol)
-            assert_near_equal(tccl[idx], CTX[case_idx], tolerance=tol)
-            assert_near_equal(thrt[idx], thrust[case_idx], tolerance=tol)
-            assert_near_equal(peff[idx], prop_eff[case_idx], tolerance=tol)
-            assert_near_equal(lfac[idx], install_loss[case_idx], tolerance=tol)
-            assert_near_equal(ieff[idx], install_eff[case_idx], tolerance=tol)
+            expected_values = {
+                'thrust_coefficient': (cthr[idx], CT[case_idx]),
+                'comp_tip_loss_factor': (ctlf[idx], XFT[case_idx]),
+                'thrust_coefficient_comp_loss': (tccl[idx], CTX[case_idx]),
+                'thrust': (thrt[idx], thrust[case_idx]),
+                'propeller_efficiency': (peff[idx], prop_eff[case_idx]),
+                'install_loss_factor': (lfac[idx], install_loss[case_idx]),
+                'install_efficiency': (ieff[idx], install_eff[case_idx]),
+            }
+            for var_name, (actual, expected) in expected_values.items():
+                with self.subTest(case_idx=case_idx, var=var_name):
+                    assert_near_equal(actual, expected, tolerance=tol)
 
     def test_case_0_1_2(self):
         # Case 0, 1, 2, to test installation loss factor computation.

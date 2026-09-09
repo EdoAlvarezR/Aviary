@@ -2,6 +2,7 @@ import openmdao.api as om
 from openmdao.core.constants import _UNDEFINED
 
 from aviary.utils.utils import wrapped_convert_units
+from aviary.variable_info.enums import PhaseType
 
 
 def units_setter(opt_meta, value):
@@ -46,6 +47,18 @@ class AviaryOptionsDictionary(om.OptionsDictionary):
 
     def __init__(self, data=None, parent_name=None):
         super().__init__(parent_name)
+
+        # This one needs to be in all phase_builder dictionaries.
+        self.declare(
+            name='phase_type',
+            types=PhaseType,
+            default=PhaseType.DEFAULT,
+            desc='The phase builder to use for this phase. This is an experimental feature that '
+            'currently allows a limited ability to select the equations of motion in certain '
+            'cases. \n'
+            'Currently, if you have a steady cruise phase in a two-dof mission, you can select '
+            '"BREGUET_RANGE" or "SIMPLE_CRUISE".',
+        )
 
         self.declare_options()
 
@@ -276,12 +289,24 @@ class AviaryOptionsDictionary(om.OptionsDictionary):
             desc=desc,
         )
 
+        name = f'{state_name}_direct_link'
+        default = defaults.get(name, True)
+        desc = 'When True, directly connect the initial state to the upstream phase.\n'
+        desc += 'When False, use a constraint.\n'
+        desc += f'Only valid when {state_name}_optimize is set to True.'
+        self.declare(
+            name=name,
+            default=default,
+            types=bool,
+            desc=desc,
+        )
+
     def add_control_options(self, ctrl_name: str, units: str = None, defaults=None):
         """
         Adds all options needed for a control variable.
 
         For a control named mach, these are mach_initial, mach_final, mach_bounds, mach_ref,
-        mach_ref0, mach_polynomial_order, mach_optimize, mach_rate_constraint.
+        mach_ref0, mach_polynomial_order, mach_optimize.
 
         Parameters
         ----------
@@ -386,15 +411,15 @@ class AviaryOptionsDictionary(om.OptionsDictionary):
             desc=desc,
         )
 
-        name = f'{ctrl_name}_rate_constraint'
-        default = defaults.get(name, None)
-        desc = f'Can be (None, positive, negative.)  When not None, adds a constraint that keeps '
-        desc += 'the rate positive or negative as requested. For altitude in a flight phase, '
-        desc += 'negative means no climb, and positive means no descent.'
+        name = f'{ctrl_name}_direct_link'
+        default = defaults.get(name, True)
+        desc = 'When True, directly connect the first control point to the upstream phase.\n'
+        desc += 'When False, use a constraint.\n'
+        desc += f'Only valid when {ctrl_name}_optimize is set to True.'
         self.declare(
             name=name,
             default=default,
-            values=[None, 'positive', 'negative'],
+            types=bool,
             desc=desc,
         )
 
@@ -455,3 +480,14 @@ class AviaryOptionsDictionary(om.OptionsDictionary):
                 units=units,
                 desc=desc,
             )
+
+        name = 'time_initial_direct_link'
+        default = defaults.get(name, True)
+        desc = f'When True, directly connect the initial_time to the upstream phase.\n'
+        desc += 'When False, use a constraint.'
+        self.declare(
+            name=name,
+            default=default,
+            types=bool,
+            desc=desc,
+        )

@@ -14,17 +14,20 @@ import numpy as np
 from openmdao.core.problem import _clear_problem_names
 from openmdao.utils.testing_utils import require_pyoptsparse, use_tempdirs
 
-from aviary.interface.methods_for_level1 import run_aviary
-from aviary.models.aircraft.test_aircraft.GwFm_phase_info import phase_info
-from aviary.validation_cases.benchmark_utils import compare_against_expected_values
+from aviary.interface.run_aviary import run_aviary
+from aviary.validation_cases.validation_data.test_models.GwFm_phase_info import phase_info
+from aviary.validation_cases.benchmark_utils import (
+    compare_against_expected_values,
+    print_benchmark_results,
+)
 
 
 @use_tempdirs
 class ProblemPhaseTestCase(unittest.TestCase):
     """
     Test the setup and run of a large single aisle commercial transport aircraft using
-    GASP mass method, GASP aero method, and HEIGHT_ENERGY mission method. Expected outputs
-    based on 'models/aircraft/test_aircraft/aircraft_for_bench_FwFm.csv' model.
+    GASP mass method, GASP aero method, and ENERGY_STATE mission method. Expected outputs
+    based on 'validation_cases/validation_data/test_models/aircraft_for_bench_FwFm.csv' model.
     """
 
     def setUp(self):
@@ -120,25 +123,34 @@ class ProblemPhaseTestCase(unittest.TestCase):
     @require_pyoptsparse(optimizer='IPOPT')
     def bench_test_swap_1_GwFm_IPOPT(self):
         prob = run_aviary(
-            'models/aircraft/test_aircraft/aircraft_for_bench_GwFm.csv',
+            'validation_cases/validation_data/test_models/aircraft_for_bench_GwFm.csv',
             self.phase_info,
-            max_iter=100,
+            max_iter=50,
             optimizer='IPOPT',
             verbosity=0,
         )
+        print_benchmark_results(prob)
+        # self.assertTrue(prob.result.success)
         compare_against_expected_values(prob, self.expected_dict)
 
     @require_pyoptsparse(optimizer='SNOPT')
     def bench_test_swap_1_GwFm_SNOPT(self):
         prob = run_aviary(
-            'models/aircraft/test_aircraft/aircraft_for_bench_GwFm.csv',
+            'validation_cases/validation_data/test_models/aircraft_for_bench_GwFm.csv',
             self.phase_info,
             max_iter=50,
             optimizer='SNOPT',
             verbosity=0,
         )
+        print_benchmark_results(prob)
+        # self.assertTrue(prob.result.success)
         compare_against_expected_values(prob, self.expected_dict)
+        self.assertTrue(prob.result.success)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    # unittest.main()
+    test = ProblemPhaseTestCase()
+    test.setUp()
+    # test.bench_test_swap_1_GwFm_IPOPT()
+    test.bench_test_swap_1_GwFm_SNOPT()
